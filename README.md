@@ -43,7 +43,7 @@ KNX Subgroup Configuration:
 
 3. sets the remote temperature setpoint if `/knx/{floor}/{roomnumber}/targetTemperature?value=X.X` is called
 
-4. if configured in peroperties file temperature values received via KNX can be saved in InfluxDB
+4. if configured in properties file temperature values received via KNX can be saved in InfluxDB
 
 ## API M-76
 
@@ -60,7 +60,7 @@ Provides an API to access the C-56 device via the Uponor M-76 device to:
 ```
 {installation} = Name of Installation corresponding to M-76 URL in application.properties file
 
-{roomnumber} = Number of the first configured channel for the thermostat
+{roomnumber} = Number of the first configured channel for the room in C-56
 
 2. disables the remote temperature setpoint if `/{installation}/{roomnumber}/targetHeatingCoolingState?value=3` is called. The following states are possible:
 
@@ -71,7 +71,7 @@ Provides an API to access the C-56 device via the Uponor M-76 device to:
 | `2` | Cool |
 | `3` | Auto |
 
-3. sets the remote temperature setpoint if '/{installation}/{roomnumber}/targetTemperature?value=X.X' is called
+3. sets the remote temperature setpoint if `/{installation}/{roomnumber}/targetTemperature?value=X.X` is called
 
 ## Property File
 
@@ -79,7 +79,7 @@ Provides an API to access the C-56 device via the Uponor M-76 device to:
 | --- | --- | --- |
 | `server.port` | Port of the webserver | 9000 |
 | `logging.level.XXX` | Logging Level | ERROR |
-| `url.uponor.api` | URL to Uponor M-76-API as List: Key = Name of Installation used in API | {OG:'http://192.168.1.128/api',EG:'http://192.168.1.128/api'} |
+| `url.uponor.api` | URL to Uponor M-76-API as List: Key = Name of Installation used in API | `{OG:'http://192.168.1.128/api',EG:'http://192.168.1.128/api'}` |
 | `knx.ip` | IP adress of KNX IP-Interface | 192.168.1.165 |
 | `knx.port` | Port of KNX IP-Interface | 3671 |
 | `knx.proxy.use` | if true temperature values are only refreshed after configured interval | true |
