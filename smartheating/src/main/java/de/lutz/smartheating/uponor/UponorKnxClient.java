@@ -1,10 +1,13 @@
 package de.lutz.smartheating.uponor;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 import de.lutz.smartheating.Properties;
+import de.lutz.smartheating.model.TempData;
 import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.dptxlator.DPTXlator;
 import tuwien.auto.calimero.link.KNXNetworkLink;
@@ -18,18 +21,10 @@ public class UponorKnxClient {
 	public ProcessCommunicator processCommunicator;
 	KNXNetworkLink knxLink;
 
-	private Map<String, Double> tempSetpoints = new HashMap<String, Double>();
+	private Map<String, TempData> proxyTemp = new HashMap<String, TempData>();
 
-	private Map<String, Double> tempRemoteSetpoints = new HashMap<String, Double>();
-
-	private Map<String, Double> temperatures = new HashMap<String, Double>();
-
-	public Map<String, Double> getTemperatures() {
-		return temperatures;
-	}
-
-	public void setTemperatures(Map<String, Double> temperatures) {
-		this.temperatures = temperatures;
+	public Map<String, TempData> getProxyData() {
+		return this.proxyTemp;
 	}
 
 	public void renewConnection() {
@@ -62,7 +57,7 @@ public class UponorKnxClient {
 
 			this.processCommunicator = new ProcessCommunicatorImpl(knxLink);
 
-			KnxListener listener = new KnxListener(tempSetpoints, temperatures, tempRemoteSetpoints);
+			KnxListener listener = new KnxListener(proxyTemp);
 			processCommunicator.addProcessListener(listener);
 
 		} catch (Exception e) {
@@ -96,19 +91,15 @@ public class UponorKnxClient {
 	}
 
 	public double readDoubleViaProxyMap(String groupAddress) {
-		Double setpoint = tempSetpoints.get(groupAddress);
-		if (setpoint != null) {
-			return setpoint.doubleValue();
+		TempData tempData = proxyTemp.get(groupAddress);
+		if (tempData != null) {
+			LocalDateTime now = LocalDateTime.now();
+			Duration duration = Duration.between(now, tempData.getTimestamp());
+			long diff = Math.abs(duration.toSeconds());
+			if (diff <= Properties.PROXY_SECONDS) {
+				return tempData.getTemperature().doubleValue();
+			}
 		}
-		Double temperature = temperatures.get(groupAddress);
-		if (temperature != null) {
-			return temperature.doubleValue();
-		}
-		Double remoteSetpoint = tempRemoteSetpoints.get(groupAddress);
-		if (remoteSetpoint != null) {
-			return remoteSetpoint.doubleValue();
-		}
-		
 		return readDouble(groupAddress);
 	}
 
@@ -215,22 +206,6 @@ public class UponorKnxClient {
 			}
 		}
 		return false;
-	}
-
-	public Map<String, Double> getTempSetpoints() {
-		return tempSetpoints;
-	}
-
-	public void setTempSetpoints(Map<String, Double> tempSetpoints) {
-		this.tempSetpoints = tempSetpoints;
-	}
-
-	public Map<String, Double> getTempRemoteSetpoints() {
-		return tempRemoteSetpoints;
-	}
-
-	public void setTempRemoteSetpoints(Map<String, Double> tempRemoteSetpoints) {
-		this.tempRemoteSetpoints = tempRemoteSetpoints;
 	}
 
 }

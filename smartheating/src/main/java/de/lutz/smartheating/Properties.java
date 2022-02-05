@@ -14,6 +14,7 @@ public class Properties {
 	public static int KNX_PORT;
 	
 	public static Boolean USE_PROXYMAP;
+	public static int PROXY_SECONDS;
 	
 	public static Boolean USE_INFLUXDB;
     public static String INFLUXDB_URL;
@@ -74,5 +75,10 @@ public class Properties {
     public void setUSE_PROXYMAP(Boolean uSE_PROXYMAP) {
     	USE_PROXYMAP = uSE_PROXYMAP;
     }
+    
+	@Value("${knx.proxy.interval.seconds}")
+	public void setPROXY_SECONDS(int pROXY_SECONDS) {
+		PROXY_SECONDS = pROXY_SECONDS;
+	}
 
 }
