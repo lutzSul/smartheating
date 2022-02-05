@@ -30,6 +30,15 @@ public class UponorKnxHelper {
 		return false;
 	}
 	
+	public static boolean isActuatorStatus(String groupAddr) {
+		String[] parts = groupAddr.split("/");
+		
+		if (parts[2].equals("8")) {
+			return true;
+		}
+		return false;
+	}
+	
 	public static String getHauptgruppe(String groupAddr) {
 		String[] parts = groupAddr.split("/");
 		return parts[0];

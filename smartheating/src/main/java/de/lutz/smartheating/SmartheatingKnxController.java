@@ -107,7 +107,12 @@ public class SmartheatingKnxController {
 
 		boolean heat = false;
 		String groupAddrActuator = floor + "/" + roomnumber + "/" + UponorKnxHelper.ADDR_ACTUATOR_STATUS;
-		heat = uponorKnxClient.readBoolean(groupAddrActuator);
+		
+		if (Properties.USE_PROXYMAP) {
+			heat = uponorKnxClient.readBooleanViaProxyMap(groupAddrActuator);
+		} else {
+			heat = uponorKnxClient.readBoolean(groupAddrActuator);
+		}	
 
 		if (heat)
 			result.setCurrentHeatingCoolingState(HEATING_COOLING_STATE_HEAT);

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.lutz.smartheating.Properties;
+import de.lutz.smartheating.model.ActuatorStatus;
 import de.lutz.smartheating.model.TempData;
 import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.dptxlator.DPTXlator;
@@ -22,6 +23,7 @@ public class UponorKnxClient {
 	KNXNetworkLink knxLink;
 
 	private Map<String, TempData> proxyTemp = new HashMap<String, TempData>();
+	private Map<String, ActuatorStatus> proxyActuator = new HashMap<String, ActuatorStatus>();
 
 	public Map<String, TempData> getProxyData() {
 		return this.proxyTemp;
@@ -57,7 +59,7 @@ public class UponorKnxClient {
 
 			this.processCommunicator = new ProcessCommunicatorImpl(knxLink);
 
-			KnxListener listener = new KnxListener(proxyTemp);
+			KnxListener listener = new KnxListener(proxyTemp, proxyActuator);
 			processCommunicator.addProcessListener(listener);
 
 		} catch (Exception e) {
@@ -206,6 +208,19 @@ public class UponorKnxClient {
 			}
 		}
 		return false;
+	}
+	
+	public boolean readBooleanViaProxyMap(String groupAddress) {
+		ActuatorStatus actData = proxyActuator.get(groupAddress);
+		if (actData != null) {
+			LocalDateTime now = LocalDateTime.now();
+			Duration duration = Duration.between(now, actData.getTimestamp());
+			long diff = Math.abs(duration.toSeconds());
+			if (diff <= Properties.PROXY_SECONDS) {
+				return actData.getStatus().booleanValue();
+			}
+		}
+		return readBoolean(groupAddress);
 	}
 
 }
