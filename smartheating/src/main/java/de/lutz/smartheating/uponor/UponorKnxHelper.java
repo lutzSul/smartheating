@@ -69,7 +69,7 @@ public class UponorKnxHelper {
 		if (parts[2].equals("6")) {
 			return true;
 		}
-		if (parts[2].equals("0")) {
+		if (parts[2].equals("10")) {
 			return true;
 		}
 		return false;

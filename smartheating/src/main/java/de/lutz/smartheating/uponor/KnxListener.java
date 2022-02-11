@@ -143,4 +143,14 @@ public class KnxListener implements ProcessListener {
 		this.proxyTemp = proxyTemp;
 	}
 
+	public InfluxDBAccess getInfluxDBAccess() {
+		return influxDBAccess;
+	}
+
+	public void setInfluxDBAccess(InfluxDBAccess influxDBAccess) {
+		this.influxDBAccess = influxDBAccess;
+	}
+	
+	
+
 }

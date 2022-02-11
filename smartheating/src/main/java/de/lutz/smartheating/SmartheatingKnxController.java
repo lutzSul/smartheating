@@ -151,6 +151,9 @@ public class SmartheatingKnxController {
 			if (success) {
 				logger.debug("Erfolgreich - Lösche Remote-Setpoint aus Map...");
 				uponorKnxClient.getProxyData().remove(groupAddr);
+				if (Properties.USE_INFLUXDB) {
+					uponorKnxClient.getInfluxDBAccess().saveValue(groupAddr, targetTempKnx);
+				}
 			}
 		}
 		return true;
@@ -180,6 +183,9 @@ public class SmartheatingKnxController {
 		if (success) {
 			TempData tempData = new TempData(value, TempData.TYPE_TEMP_REMOTE_SETPOINT, groupAddr);
 			uponorKnxClient.getProxyData().put(groupAddr, tempData);
+			if (Properties.USE_INFLUXDB) {
+				uponorKnxClient.getInfluxDBAccess().saveValue(groupAddr, value);
+			}
 		}
 		return true;
 	}

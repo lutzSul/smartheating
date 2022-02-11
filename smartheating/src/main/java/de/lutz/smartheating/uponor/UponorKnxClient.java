@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.lutz.smartheating.Properties;
+import de.lutz.smartheating.database.InfluxDBAccess;
 import de.lutz.smartheating.model.ActuatorStatus;
 import de.lutz.smartheating.model.TempData;
 import tuwien.auto.calimero.GroupAddress;
@@ -21,6 +22,7 @@ public class UponorKnxClient {
 
 	public ProcessCommunicator processCommunicator;
 	KNXNetworkLink knxLink;
+	KnxListener knxListener;
 
 	private Map<String, TempData> proxyTemp = new HashMap<String, TempData>();
 	private Map<String, ActuatorStatus> proxyActuator = new HashMap<String, ActuatorStatus>();
@@ -51,6 +53,13 @@ public class UponorKnxClient {
 		initProcessCommunicator();
 
 	}
+	
+	public InfluxDBAccess getInfluxDBAccess() {
+		if (this.knxListener!=null) {
+			return this.knxListener.getInfluxDBAccess();
+		}
+		return new InfluxDBAccess();
+	}
 
 	public void initProcessCommunicator() {
 		try {
@@ -59,8 +68,8 @@ public class UponorKnxClient {
 
 			this.processCommunicator = new ProcessCommunicatorImpl(knxLink);
 
-			KnxListener listener = new KnxListener(proxyTemp, proxyActuator);
-			processCommunicator.addProcessListener(listener);
+			this.knxListener = new KnxListener(proxyTemp, proxyActuator);
+			processCommunicator.addProcessListener(this.knxListener);
 
 		} catch (Exception e) {
 			System.err.println(e);
