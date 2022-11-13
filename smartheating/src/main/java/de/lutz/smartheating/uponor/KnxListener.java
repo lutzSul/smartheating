@@ -23,8 +23,8 @@ public class KnxListener implements ProcessListener {
 	final static Logger logger = LoggerFactory.getLogger(KnxListener.class);
 	
 	final static String DPT_HEATING = "heating";
-	
-	final static String DPT_COOLING = "cooling"; 
+
+	final static String DPT_COOLING = "cooling";
 
 	private Map<String, TempData> proxyTemp;
 	
@@ -120,6 +120,11 @@ public class KnxListener implements ProcessListener {
 				t = TranslatorTypes.createTranslator(DPT_HEAT_COOL);
 				t.setData(e.getASDU());
 				logger.debug("Actuator Status ist " + t.getValue());
+				
+				if (Properties.USE_INFLUXDB && influxDBAccess != null) {
+					influxDBAccess.saveActuatorValue(e.getDestination().toString(), t.getValue());
+				}
+				
 				if (DPT_HEATING.equals(t.getValue())) {
 					ActuatorStatus actuatorStatus = new ActuatorStatus(true, e.getDestination().toString());
 					proxyActuator.put(e.getDestination().toString(), actuatorStatus);

@@ -18,9 +18,9 @@ public class Properties {
 	
 	public static Boolean USE_INFLUXDB;
     public static String INFLUXDB_URL;
-    public static String INFLUXDB_USERNAME;
-    public static String INFLUXDB_PASSWORD;
-    public static String INFLUXDB_DBNAME;
+    public static String INFLUXDB_ORG;
+    public static String INFLUXDB_TOKEN;
+    public static String INFLUXDB_BUCKET;
 	
 	static {
 		URL_UPONOR_API.put("OG", "http://192.168.1.128/api");
@@ -51,19 +51,19 @@ public class Properties {
         INFLUXDB_URL = iNFLUXDB_URL;
     }
 
-    @Value("${influxdb.username}")
-    public void setINFLUXDB_USERNAME(String iNFLUXDB_USERNAME) {
-        INFLUXDB_USERNAME = iNFLUXDB_USERNAME;
+    @Value("${influxdb.org}")
+    public void setINFLUXDB_ORG(String iNFLUXDB_ORG) {
+        INFLUXDB_ORG = iNFLUXDB_ORG;
     }
 
-    @Value("${influxdb.password}")
-    public void setINFLUXDB_PASSWORD(String iNFLUXDB_PASSWORD) {
-        INFLUXDB_PASSWORD = iNFLUXDB_PASSWORD;
+    @Value("${influxdb.token}")
+    public void setINFLUXDB_TOKEN(String iNFLUXDB_TOKEN) {
+        INFLUXDB_TOKEN = iNFLUXDB_TOKEN;
     }
 
-    @Value("${influxdb.dbname}")
-    public void setINFLUXDB_DBNAME(String iNFLUXDB_DBNAME) {
-        INFLUXDB_DBNAME = iNFLUXDB_DBNAME;
+    @Value("${influxdb.bucket}")
+    public void setINFLUXDB_BUCKET(String iNFLUXDB_BUCKET) {
+        INFLUXDB_BUCKET = iNFLUXDB_BUCKET;
     }
 	
     @Value("${influxdb.use}")
