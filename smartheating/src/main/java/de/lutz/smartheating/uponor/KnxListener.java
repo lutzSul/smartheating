@@ -21,13 +21,13 @@ import tuwien.auto.calimero.process.ProcessListener;
 public class KnxListener implements ProcessListener {
 
 	final static Logger logger = LoggerFactory.getLogger(KnxListener.class);
-	
+
 	final static String DPT_HEATING = "heating";
 
 	final static String DPT_COOLING = "cooling";
 
 	private Map<String, TempData> proxyTemp;
-	
+
 	private Map<String, ActuatorStatus> proxyActuator;
 
 	private InfluxDBAccess influxDBAccess;
@@ -83,25 +83,23 @@ public class KnxListener implements ProcessListener {
 				if (UponorKnxHelper.isSetpoint(e.getDestination().toString())) {
 					logger.debug("Temperatur Setpoint ist " + t.getValue() + " (" + t.getNumericValue() + ")");
 
-					TempData oldSetpoint = proxyTemp.get(e.getDestination().toString());
 					TempData tempData = new TempData(t.getNumericValue(), TempData.TYPE_TEMP_SETPOINT,
 							e.getDestination().toString());
-					if (oldSetpoint == null) {
-						logger.debug("Keinen alten Setpoint gefunden...");
-						proxyTemp.put(e.getDestination().toString(), tempData);
-					} else {
-						if (oldSetpoint.getTemperature().doubleValue() != t.getNumericValue()) {
-							if ("GroupWrite".equals(svc)) {
-								logger.debug("Neuer Setpoint wird geschrieben - Remote-Setpoint aus Speicher löschen");
-								String hauptgruppe = UponorKnxHelper.getHauptgruppe(e.getDestination().toString());
-								String mittelgruppe = UponorKnxHelper.getMittelgruppe(e.getDestination().toString());
-								proxyTemp.remove(
-										hauptgruppe + "/" + mittelgruppe + "/" + UponorKnxHelper.ADDR_REMOTE_SETPOINT);
-							}
-							logger.debug("Neuen Setpoint in Map speichern");
-							proxyTemp.put(e.getDestination().toString(), tempData);
+
+					if ("GroupWrite".equals(svc)) {
+						logger.debug("Neuer Setpoint wird geschrieben - Remote-Setpoint aus Speicher löschen");
+						String hauptgruppe = UponorKnxHelper.getHauptgruppe(e.getDestination().toString());
+						String mittelgruppe = UponorKnxHelper.getMittelgruppe(e.getDestination().toString());
+						proxyTemp.remove(hauptgruppe + "/" + mittelgruppe + "/" + UponorKnxHelper.ADDR_REMOTE_SETPOINT);
+						if (Properties.USE_INFLUXDB && influxDBAccess != null) {
+							logger.debug("Remote-Setpoint in Influx-DB auf 0 setzen...");
+							influxDBAccess.saveValue(
+									hauptgruppe + "/" + mittelgruppe + "/" + UponorKnxHelper.ADDR_REMOTE_SETPOINT,
+									0.0d);
 						}
 					}
+
+					proxyTemp.put(e.getDestination().toString(), tempData);
 
 				}
 
@@ -113,18 +111,18 @@ public class KnxListener implements ProcessListener {
 				}
 
 			}
-			
+
 			if (UponorKnxHelper.isActuatorStatus(e.getDestination().toString())) {
 				DPTXlator t;
 
 				t = TranslatorTypes.createTranslator(DPT_HEAT_COOL);
 				t.setData(e.getASDU());
 				logger.debug("Actuator Status ist " + t.getValue());
-				
+
 				if (Properties.USE_INFLUXDB && influxDBAccess != null) {
 					influxDBAccess.saveActuatorValue(e.getDestination().toString(), t.getValue());
 				}
-				
+
 				if (DPT_HEATING.equals(t.getValue())) {
 					ActuatorStatus actuatorStatus = new ActuatorStatus(true, e.getDestination().toString());
 					proxyActuator.put(e.getDestination().toString(), actuatorStatus);
@@ -155,7 +153,5 @@ public class KnxListener implements ProcessListener {
 	public void setInfluxDBAccess(InfluxDBAccess influxDBAccess) {
 		this.influxDBAccess = influxDBAccess;
 	}
-	
-	
 
 }

@@ -39,7 +39,7 @@ public class InfluxDBAccess {
 
 		WriteApiBlocking writeApi = influxDBClient.getWriteApiBlocking();
 
-		if (value > 0.0d) {
+		if (value >= 0.0d) {
 			Point point = Point.measurement(groupAdress).addField("temperature", value)
 					.time(Instant.now().toEpochMilli(), WritePrecision.MS);
 
