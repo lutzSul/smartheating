@@ -12,6 +12,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -24,6 +25,7 @@ import de.lutz.smartheating.model.UponorResult;
 import de.lutz.smartheating.model.UponorWriteResult;
 import de.lutz.smartheating.model._85;
 
+@Component
 public class UponorClient {
 	
 	@Autowired
