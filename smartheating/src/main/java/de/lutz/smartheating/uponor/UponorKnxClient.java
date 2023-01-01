@@ -1,12 +1,19 @@
 package de.lutz.smartheating.uponor;
 
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.lutz.smartheating.Properties;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import de.lutz.smartheating.SmartheatingProperties;
 import de.lutz.smartheating.database.InfluxDBAccess;
 import de.lutz.smartheating.model.ActuatorStatus;
 import de.lutz.smartheating.model.TempData;
@@ -18,11 +25,15 @@ import tuwien.auto.calimero.link.medium.TPSettings;
 import tuwien.auto.calimero.process.ProcessCommunicator;
 import tuwien.auto.calimero.process.ProcessCommunicatorImpl;
 
-public class UponorKnxClient {
+@Component
+public class UponorKnxClient implements InitializingBean {
 
 	public ProcessCommunicator processCommunicator;
 	KNXNetworkLink knxLink;
 	KnxListener knxListener;
+
+	@Autowired
+	private SmartheatingProperties props;
 
 	private Map<String, TempData> proxyTemp = new HashMap<String, TempData>();
 	private Map<String, ActuatorStatus> proxyActuator = new HashMap<String, ActuatorStatus>();
@@ -53,22 +64,48 @@ public class UponorKnxClient {
 		initProcessCommunicator();
 
 	}
-	
+
 	public InfluxDBAccess getInfluxDBAccess() {
-		if (this.knxListener!=null) {
+		if (this.knxListener != null) {
 			return this.knxListener.getInfluxDBAccess();
 		}
-		return new InfluxDBAccess();
+
+		return null;
 	}
 
 	public void initProcessCommunicator() {
+
+		String localIP = null;
+
+		try (final DatagramSocket socket = new DatagramSocket()) {
+			socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+			localIP = socket.getLocalAddress().getHostAddress();
+		}
+
+		catch (Exception exIp) {
+
+		}
+
 		try {
-			final InetSocketAddress remote = new InetSocketAddress(Properties.KNX_IP, Properties.KNX_PORT);
-			this.knxLink = KNXNetworkLinkIP.newTunnelingLink(null, remote, false, new TPSettings());
+			InetSocketAddress local = null;
+
+			if (localIP != null) {
+				local = new InetSocketAddress(localIP, 0);
+			}
+
+			final InetSocketAddress remote = new InetSocketAddress(props.getKNX_IP(), props.getKNX_PORT());
+			this.knxLink = KNXNetworkLinkIP.newTunnelingLink(local, remote, false, new TPSettings());
 
 			this.processCommunicator = new ProcessCommunicatorImpl(knxLink);
 
-			this.knxListener = new KnxListener(proxyTemp, proxyActuator);
+			if (props.getUSE_INFLUXDB()) {
+				InfluxDBAccess influxDBAccess = new InfluxDBAccess(props.getINFLUXDB_URL(), props.getINFLUXDB_TOKEN(),
+						props.getINFLUXDB_ORG(), props.getINFLUXDB_BUCKET());
+				this.knxListener = new KnxListener(proxyTemp, proxyActuator, influxDBAccess);
+			} else {
+				this.knxListener = new KnxListener(proxyTemp, proxyActuator);
+			}
+
 			processCommunicator.addProcessListener(this.knxListener);
 
 		} catch (Exception e) {
@@ -78,7 +115,6 @@ public class UponorKnxClient {
 	}
 
 	public UponorKnxClient() {
-		initProcessCommunicator();
 	}
 
 	public double readDouble(String groupAddress) {
@@ -107,7 +143,7 @@ public class UponorKnxClient {
 			LocalDateTime now = LocalDateTime.now();
 			Duration duration = Duration.between(now, tempData.getTimestamp());
 			long diff = Math.abs(duration.toSeconds());
-			if (diff <= Properties.PROXY_SECONDS) {
+			if (diff <= props.getPROXY_SECONDS()) {
 				return tempData.getTemperature().doubleValue();
 			}
 		}
@@ -218,18 +254,24 @@ public class UponorKnxClient {
 		}
 		return false;
 	}
-	
+
 	public boolean readBooleanViaProxyMap(String groupAddress) {
 		ActuatorStatus actData = proxyActuator.get(groupAddress);
 		if (actData != null) {
 			LocalDateTime now = LocalDateTime.now();
 			Duration duration = Duration.between(now, actData.getTimestamp());
 			long diff = Math.abs(duration.toSeconds());
-			if (diff <= Properties.PROXY_SECONDS) {
+			if (diff <= props.getPROXY_SECONDS()) {
 				return actData.getStatus().booleanValue();
 			}
 		}
 		return readBoolean(groupAddress);
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		initProcessCommunicator();
+
 	}
 
 }

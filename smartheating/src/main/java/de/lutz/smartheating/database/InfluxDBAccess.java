@@ -8,8 +8,6 @@ import com.influxdb.client.WriteApiBlocking;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
 
-import de.lutz.smartheating.Properties;
-
 public class InfluxDBAccess {
 
 	InfluxDBClient influxDBClient;
@@ -22,13 +20,24 @@ public class InfluxDBAccess {
 
 	final static Integer OFF = 0;
 
-	public InfluxDBAccess() {
+	private String url;
+
+	private String token;
+
+	private String org;
+
+	private String bucket;
+
+	public InfluxDBAccess(String url, String token, String org, String bucket) {
+		this.url = url;
+		this.token = token;
+		this.org = org;
+		this.bucket = bucket;
 		initDBConnection();
 	}
 
 	public void initDBConnection() {
-		influxDBClient = InfluxDBClientFactory.create(Properties.INFLUXDB_URL, Properties.INFLUXDB_TOKEN.toCharArray(),
-				Properties.INFLUXDB_ORG, Properties.INFLUXDB_BUCKET);
+		influxDBClient = InfluxDBClientFactory.create(this.url, this.token.toCharArray(), this.org, this.bucket);
 	}
 
 	public void saveValue(String groupAdress, Double value) {

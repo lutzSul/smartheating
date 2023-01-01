@@ -11,9 +11,12 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import de.lutz.smartheating.SmartheatingProperties;
 import de.lutz.smartheating.model.Params;
 import de.lutz.smartheating.model.Properties;
 import de.lutz.smartheating.model.UponorRequest;
@@ -22,6 +25,9 @@ import de.lutz.smartheating.model.UponorWriteResult;
 import de.lutz.smartheating.model._85;
 
 public class UponorClient {
+	
+	@Autowired
+	private SmartheatingProperties props;
 
 	public static UponorRequest generateRequest(List<Integer> parameter) {
 		UponorRequest uRequest = new UponorRequest();
@@ -74,7 +80,7 @@ public class UponorClient {
 		return uRequest;
 	}
 
-	public static Map<Integer, Integer> getRoomIds(String installation) {
+	public Map<Integer, Integer> getRoomIds(String installation) {
 		Map<Integer, Integer> roomIdsWithServerId = new HashMap<Integer, Integer>();
 		List<Integer> targetList = new ArrayList<>(UponorHelper.roomIdsByServerId.keySet());
 		Map<Integer, Double> result = readValuesFromApi(installation, targetList);
@@ -87,7 +93,7 @@ public class UponorClient {
 		return roomIdsWithServerId;
 	}
 
-	public static Map<Integer, Double> readValuesFromApi(String installation, List<Integer> parameter) {
+	public Map<Integer, Double> readValuesFromApi(String installation, List<Integer> parameter) {
 		Map<Integer, Double> result = new HashMap<Integer, Double>();
 		GsonBuilder builder = new GsonBuilder();
 		builder.setPrettyPrinting();
@@ -97,7 +103,7 @@ public class UponorClient {
 
 		URL url;
 		try {
-			String urlStr = de.lutz.smartheating.Properties.URL_UPONOR_API.get(installation);
+			String urlStr = props.getURL_UPONOR_API().get(installation);
 			url = new URL(urlStr);
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
@@ -146,7 +152,7 @@ public class UponorClient {
 		return result;
 	}
 
-	public static boolean writeValuesToApi(String installation, Map<Integer, Double> parameter) {
+	public boolean writeValuesToApi(String installation, Map<Integer, Double> parameter) {
 		GsonBuilder builder = new GsonBuilder();
 		builder.setPrettyPrinting();
 		Gson gson = builder.create();
@@ -155,7 +161,7 @@ public class UponorClient {
 
 		URL url;
 		try {
-			String urlStr = de.lutz.smartheating.Properties.URL_UPONOR_API.get(installation);
+			String urlStr = props.getURL_UPONOR_API().get(installation);
 			url = new URL(urlStr);
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 

@@ -30,6 +30,8 @@ public class SmartheatingController {
 	public static final Integer HEATING_COOLING_STATE_AUTO = 3;
 
 	ScheduledExecutorService executorService;
+	
+	UponorClient uponorClient = new UponorClient();
 
 	public SmartheatingController() {
 
@@ -51,8 +53,8 @@ public class SmartheatingController {
 		parameter.add(UponorHelper.getRoomControlServerId(roomnumber, UponorHelper.PARAM_ACTUATOR_STATUS));
 
 		Map<Integer, Double> ergebnisse = new HashMap<Integer, Double>();
-		ergebnisse = UponorClient.readValuesFromApi(installation, parameter);
-		logger.debug("Daten für Raum " + roomnumber + ": " + ergebnisse.toString());
+		ergebnisse = uponorClient.readValuesFromApi(installation, parameter);
+		logger.info("Daten für Raum " + roomnumber + ": " + ergebnisse.toString());
 
 		for (Map.Entry<Integer, Double> entry : ergebnisse.entrySet()) {
 			String nameWert = UponorHelper.getRoomControlName(entry.getKey());
@@ -88,7 +90,7 @@ public class SmartheatingController {
 
 	@RequestMapping("/{installation}/rooms")
 	public Map<Integer, Integer> getRooms(@PathVariable String installation) {
-		Map<Integer, Integer> roomIdsWithServerId = UponorClient.getRoomIds(installation);
+		Map<Integer, Integer> roomIdsWithServerId = uponorClient.getRoomIds(installation);
 		return roomIdsWithServerId;
 	}
 
@@ -96,7 +98,7 @@ public class SmartheatingController {
 	public boolean setTargetHeatingCoolingState(@PathVariable String installation, @PathVariable Integer roomnumber,
 			@RequestParam Integer value) {
 		if (HEATING_COOLING_STATE_AUTO.equals(value)) {
-			logger.debug("Raumtemperatur für Raum " + roomnumber + " einstellen auf Automatik");
+			logger.info("Raumtemperatur für Raum " + roomnumber + " einstellen auf Automatik");
 			return setTargetTemperature(installation, roomnumber, 255d);
 		}
 		return true;
@@ -105,41 +107,41 @@ public class SmartheatingController {
 	@RequestMapping("/{installation}/{roomnumber}/targetTemperature")
 	public boolean setTargetTemperature(@PathVariable String installation, @PathVariable Integer roomnumber,
 			@RequestParam Double value) {
-		logger.debug("Raumtemperatur für Raum " + roomnumber + " einstellen auf " + value + " Grad!");
+		logger.info("Raumtemperatur für Raum " + roomnumber + " einstellen auf " + value + " Grad!");
 		Map<Integer, Double> writeValues = new HashMap<Integer, Double>();
 		writeValues.put(UponorHelper.getRoomControlServerId(roomnumber, UponorHelper.PARAM_THERMOSTAT_OVERRIDE), value);
-		return UponorClient.writeValuesToApi(installation, writeValues);
+		return uponorClient.writeValuesToApi(installation, writeValues);
 	}
 
 	@RequestMapping("/{installation}/{roomnumber}/targetTemperatureTherm")
 	public boolean setTargetTemperatureTherm(@PathVariable String installation, @PathVariable Integer roomnumber,
 			@RequestParam Double value) {
-		logger.debug("Raumtemperatur des Thermostats für Raum " + roomnumber + " einstellen auf " + value + " Grad!");
+		logger.info("Raumtemperatur des Thermostats für Raum " + roomnumber + " einstellen auf " + value + " Grad!");
 		Map<Integer, Double> writeValues = new HashMap<Integer, Double>();
 		writeValues.put(UponorHelper.getRoomControlServerId(roomnumber, UponorHelper.PARAM_ROOM_SETVALUE), value);
-		return UponorClient.writeValuesToApi(installation, writeValues);
+		return uponorClient.writeValuesToApi(installation, writeValues);
 	}
 
 	@RequestMapping("/{installation}/{roomnumber}/setValue")
 	public boolean setValue(@PathVariable String installation, @PathVariable Integer roomnumber,
 			@RequestParam String key, @RequestParam Double value) {
-		logger.debug("Wertänderung für Raum " + roomnumber + " - setze " + key + " auf " + value);
+		logger.info("Wertänderung für Raum " + roomnumber + " - setze " + key + " auf " + value);
 		Map<Integer, Double> writeValues = new HashMap<Integer, Double>();
 		writeValues.put(UponorHelper.getRoomControlServerId(roomnumber, key), value);
-		return UponorClient.writeValuesToApi(installation, writeValues);
+		return uponorClient.writeValuesToApi(installation, writeValues);
 	}
 
 	@RequestMapping("/{installation}/{roomnumber}/getValue")
 	public Map<Integer, Double> getValue(@PathVariable String installation, @PathVariable Integer roomnumber,
 			@RequestParam String key) {
-		logger.debug("Lese Wert für Raum " + roomnumber + " mit Key " + key);
+		logger.info("Lese Wert für Raum " + roomnumber + " mit Key " + key);
 		List<Integer> parameter = new ArrayList<Integer>();
 
 		parameter.add(UponorHelper.getRoomControlServerId(roomnumber, key));
 
 		Map<Integer, Double> ergebnisse = new HashMap<Integer, Double>();
-		ergebnisse = UponorClient.readValuesFromApi(installation, parameter);
-		logger.debug("Daten für Raum " + roomnumber + ": " + ergebnisse.toString());
+		ergebnisse = uponorClient.readValuesFromApi(installation, parameter);
+		logger.info("Daten für Raum " + roomnumber + ": " + ergebnisse.toString());
 		return ergebnisse;
 	}
 

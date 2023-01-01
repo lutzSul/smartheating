@@ -7,6 +7,7 @@ import java.math.RoundingMode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,13 +27,17 @@ public class SmartheatingKnxController {
 
 	final static Logger logger = LoggerFactory.getLogger(SmartheatingKnxController.class);
 
+	@Autowired
+	private SmartheatingProperties props;
+
 	public static final Integer HEATING_COOLING_STATE_OFF = 0;
 	public static final Integer HEATING_COOLING_STATE_HEAT = 1;
 	public static final Integer HEATING_COOLING_STATE_COOL = 2;
 	public static final Integer HEATING_COOLING_STATE_AUTO = 3;
 	public static final byte[] tempRemove = new byte[] { (byte) 0xFF, (byte) 0x7F };
 
-	private UponorKnxClient uponorKnxClient = new UponorKnxClient();
+	@Autowired
+	private UponorKnxClient uponorKnxClient;
 
 	public SmartheatingKnxController() {
 
@@ -49,7 +54,7 @@ public class SmartheatingKnxController {
 
 	@RequestMapping("/knx/{floor}/{roomnumber}/status")
 	public synchronized Status getStatus(@PathVariable String floor, @PathVariable String roomnumber) {
-		logger.debug("Lese Status für Flur " + floor + " und Raum " + roomnumber + "...");
+		logger.info("Lese Status für Flur " + floor + " und Raum " + roomnumber + "...");
 		Status result = new Status();
 		result.setCurrentHeatingCoolingState(HEATING_COOLING_STATE_AUTO);
 		result.setTargetHeatingCoolingState(HEATING_COOLING_STATE_AUTO);
@@ -57,19 +62,19 @@ public class SmartheatingKnxController {
 		String groupAddrTemp = floor + "/" + roomnumber + "/" + UponorKnxHelper.ADDR_TEMPERATURE;
 
 		double tempKnx = 0.0d;
-		if (Properties.USE_PROXYMAP) {
+		if (props.getUSE_PROXYMAP()) {
 			tempKnx = uponorKnxClient.readDoubleViaProxyMap(groupAddrTemp);
 		} else {
 			tempKnx = uponorKnxClient.readDouble(groupAddrTemp);
 		}
 
-		logger.debug("Temperatur ist " + tempKnx);
+		logger.info("Temperatur ist " + tempKnx);
 		if (tempKnx == 0.0d) {
-			logger.debug("Temperatur ist 0 - daher in der Map mit gespeicherten Werten lesen...");
+			logger.info("Temperatur ist 0 - daher in der Map mit gespeicherten Werten lesen...");
 			TempData tempFromMap = uponorKnxClient.getProxyData().get(groupAddrTemp);
 			if (tempFromMap != null) {
 				tempKnx = tempFromMap.getTemperature().doubleValue();
-				logger.debug("...gefunden");
+				logger.info("...gefunden");
 			}
 		}
 
@@ -79,40 +84,40 @@ public class SmartheatingKnxController {
 		String groupAddrRemoteSetpoint = floor + "/" + roomnumber + "/" + UponorKnxHelper.ADDR_REMOTE_SETPOINT;
 
 		double targetTempKnx = 0.0d;
-		if (Properties.USE_PROXYMAP) {
+		if (props.getUSE_PROXYMAP()) {
 			targetTempKnx = uponorKnxClient.readDoubleViaProxyMap(groupAddrSetpoint);
 		} else {
 			targetTempKnx = uponorKnxClient.readDouble(groupAddrSetpoint);
 		}
 
-		logger.debug("Soll-Temperatur ist " + targetTempKnx);
+		logger.info("Soll-Temperatur ist " + targetTempKnx);
 		if (targetTempKnx == 0.0d) {
-			logger.debug("Soll-Temperatur ist 0 - daher in der Map mit gespeicherten Werten lesen...");
+			logger.info("Soll-Temperatur ist 0 - daher in der Map mit gespeicherten Werten lesen...");
 			TempData targetTempFromMap = uponorKnxClient.getProxyData().get(groupAddrSetpoint);
 			if (targetTempFromMap != null) {
 				targetTempKnx = targetTempFromMap.getTemperature().doubleValue();
-				logger.debug("...gefunden");
+				logger.info("...gefunden");
 			}
 		}
 		TempData remoteSetpoint = uponorKnxClient.getProxyData().get(groupAddrRemoteSetpoint);
 
 		if (remoteSetpoint != null) {
-			logger.debug("Remote-Setpoint in der Map gefunden: " + remoteSetpoint.getTemperature().doubleValue());
+			logger.info("Remote-Setpoint in der Map gefunden: " + remoteSetpoint.getTemperature().doubleValue());
 			result.setTargetTemperature(remoteSetpoint.getTemperature().doubleValue());
 			result.setTargetHeatingCoolingState(HEATING_COOLING_STATE_HEAT);
 		} else {
 			result.setTargetTemperature(targetTempKnx);
-			logger.debug("keinen Remote-Setpoint in der Map gefunden.");
+			logger.info("keinen Remote-Setpoint in der Map gefunden.");
 		}
 
 		boolean heat = false;
 		String groupAddrActuator = floor + "/" + roomnumber + "/" + UponorKnxHelper.ADDR_ACTUATOR_STATUS;
-		
-		if (Properties.USE_PROXYMAP) {
+
+		if (props.getUSE_PROXYMAP()) {
 			heat = uponorKnxClient.readBooleanViaProxyMap(groupAddrActuator);
 		} else {
 			heat = uponorKnxClient.readBoolean(groupAddrActuator);
-		}	
+		}
 
 		if (heat)
 			result.setCurrentHeatingCoolingState(HEATING_COOLING_STATE_HEAT);
@@ -125,33 +130,33 @@ public class SmartheatingKnxController {
 	public synchronized boolean setTargetHeatingCoolingState(@PathVariable String floor,
 			@PathVariable String roomnumber, @RequestParam Integer value) {
 		if (HEATING_COOLING_STATE_AUTO.equals(value)) {
-			logger.debug("Raumtemperatur für Raum " + roomnumber + " einstellen auf Automatik");
+			logger.info("Raumtemperatur für Raum " + roomnumber + " einstellen auf Automatik");
 			String groupAddr = floor + "/" + roomnumber + "/" + UponorKnxHelper.ADDR_REMOTE_SETPOINT;
 
 			String groupAddrSetpoint = floor + "/" + roomnumber + "/" + UponorKnxHelper.ADDR_SETPOINT;
 			double targetTempKnx = uponorKnxClient.readDouble(groupAddrSetpoint);
-			logger.debug("Setpoint ist " + targetTempKnx);
+			logger.info("Setpoint ist " + targetTempKnx);
 			if (targetTempKnx == 0.0d) {
-				logger.debug("Setpoint ist 0 - Suche in Map...");
+				logger.info("Setpoint ist 0 - Suche in Map...");
 				TempData targetTempFromMap = uponorKnxClient.getProxyData().get(groupAddrSetpoint);
 				if (targetTempFromMap != null) {
-					logger.debug("Gefunden: " + targetTempFromMap.getTemperature().doubleValue());
+					logger.info("Gefunden: " + targetTempFromMap.getTemperature().doubleValue());
 					targetTempKnx = targetTempFromMap.getTemperature().doubleValue();
 				}
 			}
 			boolean success = false;
 			if (targetTempKnx == 0.0d) {
-				logger.debug("Setpoint ist weiterhin 0 - Lösche Remote-Setpoint...");
+				logger.info("Setpoint ist weiterhin 0 - Lösche Remote-Setpoint...");
 				success = removeRemoteSetpoint(groupAddr);
 			} else {
-				logger.debug("Stelle Remote-Setpoint auf Setpoint aus Thermometer");
+				logger.info("Stelle Remote-Setpoint auf Setpoint aus Thermometer");
 				success = uponorKnxClient.writeDouble(groupAddr, targetTempKnx);
 			}
 
 			if (success) {
-				logger.debug("Erfolgreich - Lösche Remote-Setpoint aus Map...");
+				logger.info("Erfolgreich - Lösche Remote-Setpoint aus Map...");
 				uponorKnxClient.getProxyData().remove(groupAddr);
-				if (Properties.USE_INFLUXDB) {
+				if (props.getUSE_INFLUXDB()) {
 					uponorKnxClient.getInfluxDBAccess().saveValue(groupAddr, targetTempKnx);
 				}
 			}
@@ -177,13 +182,13 @@ public class SmartheatingKnxController {
 	@RequestMapping("/knx/{floor}/{roomnumber}/targetTemperature")
 	public synchronized boolean setTargetTemperature(@PathVariable String floor, @PathVariable String roomnumber,
 			@RequestParam Double value) {
-		logger.debug("Raumtemperatur für Raum " + roomnumber + " einstellen auf " + value + " Grad!");
+		logger.info("Raumtemperatur für Raum " + roomnumber + " einstellen auf " + value + " Grad!");
 		String groupAddr = floor + "/" + roomnumber + "/" + UponorKnxHelper.ADDR_REMOTE_SETPOINT;
 		boolean success = uponorKnxClient.writeDouble(groupAddr, value);
 		if (success) {
 			TempData tempData = new TempData(value, TempData.TYPE_TEMP_REMOTE_SETPOINT, groupAddr);
 			uponorKnxClient.getProxyData().put(groupAddr, tempData);
-			if (Properties.USE_INFLUXDB) {
+			if (props.getUSE_INFLUXDB()) {
 				uponorKnxClient.getInfluxDBAccess().saveValue(groupAddr, value);
 			}
 		}
